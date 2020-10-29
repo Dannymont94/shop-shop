@@ -4,6 +4,7 @@ import { useQuery } from '@apollo/react-hooks';
 
 import { QUERY_PRODUCTS } from "../utils/queries";
 import { useStoreContext } from '../utils/GlobalState';
+import { idbPromise } from '../utils/helpers';
 
 import {
   REMOVE_FROM_CART,
@@ -29,15 +30,26 @@ function Detail() {
   const { loading, data: productData } = useQuery(QUERY_PRODUCTS);
 
   useEffect(() => {
-    if (products.length) {
+    if (products.length && (products.find(product => product._id === id))) {
       setCurrentProduct(products.find(product => product._id === id));
     } else if (productData) {
       dispatch({
         type: UPDATE_PRODUCTS,
         products: productData.products
       });
+
+      productData.products.forEach(product => {
+        idbPromise('products', 'put', product);
+      });
+    } else if (!loading) {
+      idbPromise('products', 'get').then(indexedProducts => {
+        dispatch({
+          type: UPDATE_PRODUCTS,
+          products: indexedProducts
+        });
+      });
     }
-  }, [products, id, productData, dispatch]);
+  }, [products, productData, loading, dispatch, id]);
 
   const addToCart = () => {
     const itemInCart = cart.find(cartItem => cartItem._id === id);
