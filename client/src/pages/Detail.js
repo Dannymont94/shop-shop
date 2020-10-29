@@ -54,25 +54,45 @@ function Detail() {
   const addToCart = () => {
     const itemInCart = cart.find(cartItem => cartItem._id === id);
 
+    // if item with that id is already in cart, increase purchaseQuantity by 1
     if (itemInCart) {
+      // update state
       dispatch({
         type: UPDATE_CART_QUANTITY,
         _id: id,
         purchaseQuantity: parseInt(itemInCart.purchaseQuantity) + 1
-      })
+      });
+
+      // update indexedDB
+      idbPromise('cart', 'put', {
+        ...itemInCart,
+        purchaseQuantity: parseInt(itemInCart.purchaseQuantity) + 1
+      });
+    // if item is not in cart yet, add product to cart with a purchaseQuantity of 1
     } else {
+      // update state
       dispatch({
         type: ADD_TO_CART,
         product: { ...currentProduct, purchaseQuantity: 1 }
+      });
+
+      // update indexedDB
+      idbPromise('cart', 'put', {
+        ...currentProduct,
+        purchaseQuantity: 1
       });
     }
   };
 
   const removeFromCart = () => {
+    // remove product from cart array in global state object
     dispatch({
       type: REMOVE_FROM_CART,
       _id: currentProduct._id
-    })
+    });
+
+    // remove product from cart store in indexedDB
+    idbPromise('cart', 'delete', { ...currentProduct });
   };
 
   return (
